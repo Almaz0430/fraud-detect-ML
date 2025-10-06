@@ -55,9 +55,15 @@ pip install -r requirements.txt
 
 ### 2. Загрузка датасета
 
-Скачайте датасет Credit Card Fraud Detection с Kaggle:
+⚠️ **Важно**: Датасет не включен в репозиторий из-за большого размера (143 МБ). Вам необходимо загрузить его самостоятельно.
 
-**Вариант 1: Через Kaggle CLI (рекомендуется)**
+**Вариант 1: Автоматическая загрузка (рекомендуется)**
+```bash
+# Используйте готовый скрипт для загрузки
+python download_dataset.py
+```
+
+**Вариант 2: Через Kaggle CLI**
 ```bash
 # Установите Kaggle CLI
 pip install kaggle
@@ -70,10 +76,12 @@ kaggle datasets download -d mlg-ulb/creditcardfraud
 unzip creditcardfraud.zip -d data/
 ```
 
-**Вариант 2: Ручная загрузка**
+**Вариант 3: Ручная загрузка**
 1. Перейдите на https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
 2. Скачайте файл `creditcard.csv`
 3. Поместите его в папку `data/`
+
+После загрузки убедитесь, что файл `data/creditcard.csv` существует.
 
 ### 3. Обучение модели
 
