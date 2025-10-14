@@ -9,21 +9,17 @@ Flask API для системы детекции мошенничества.
 
 from flask import Flask, request, jsonify
 import os
-import sys
 import logging
 from datetime import datetime
 import traceback
 
-# Добавляем текущую директорию в путь для импорта модулей
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 try:
-    from inference import get_model, validate_and_predict
-    from preprocess import DataPreprocessor
+    from app.inference import get_model, validate_and_predict
+    from app.preprocess import DataPreprocessor
 except ImportError as e:
-    print(f"Ошибка импорта: {e}")
-    print("Убедитесь, что все модули находятся в правильных директориях")
-    sys.exit(1)
+    raise ImportError(
+        f"Ошибка импорта: {e}. Запускайте сервер как пакет: 'python -m app.api' из корня проекта."
+    )
 
 # Настройка логирования
 logging.basicConfig(
