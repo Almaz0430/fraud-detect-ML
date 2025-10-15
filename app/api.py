@@ -8,6 +8,7 @@ Flask API для системы детекции мошенничества.
 """
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 import logging
 from datetime import datetime
@@ -30,6 +31,10 @@ logger = logging.getLogger(__name__)
 
 # Создание Flask приложения
 app = Flask(__name__)
+CORS(
+    app,
+    resources={r"/*": {"origins": os.environ.get("ALLOWED_ORIGINS", "*")}},
+)
 
 # Глобальная переменная для модели
 fraud_model = None

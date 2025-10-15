@@ -1,6 +1,7 @@
 # Dataset files
 data/creditcard.csv
 data/*.csv
+.venv
 
 # Python
 __pycache__/
@@ -29,6 +30,7 @@ MANIFEST
 venv/
 env/
 ENV/
+.venv/
 
 # Jupyter Notebook
 .ipynb_checkpoints
