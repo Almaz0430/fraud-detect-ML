@@ -1,6 +1,7 @@
 import type {
   ApiError,
   BatchPredictResponse,
+  ExplainResponse,
   HealthResponse,
   ModelInfoResponse,
   PredictResponse,
@@ -78,6 +79,25 @@ export const apiClient = {
     }
 
     return request<BatchPredictResponse>('/predict/batch', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  explain(
+    transaction: TransactionFeatures,
+    threshold?: number,
+  ): Promise<ExplainResponse> {
+    const payload: {
+      transaction: TransactionFeatures
+      threshold?: number
+    } = { transaction }
+
+    if (typeof threshold === 'number') {
+      payload.threshold = threshold
+    }
+
+    return request<ExplainResponse>('/explain', {
       method: 'POST',
       body: JSON.stringify(payload),
     })

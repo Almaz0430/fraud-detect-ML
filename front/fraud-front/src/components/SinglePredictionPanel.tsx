@@ -1,6 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { apiClient } from '../api/client'
-import type { PredictResponse, SampleTransactionResponse } from '../api/types'
+import type {
+  PredictResponse,
+  SampleTransactionResponse,
+  TransactionFeatures,
+} from '../api/types'
 import { FEATURE_NAMES, type FeatureName, DEFAULT_TRANSACTION } from '../lib/constants'
 import { formatNumber, formatTimestamp, getRiskTone } from '../lib/utils'
 
@@ -56,7 +60,7 @@ const FEATURE_DESCRIPTIONS: Record<FeatureName, string> = FEATURE_NAMES.reduce(
   (acc, feature) => {
     if (feature === 'Amount') {
       acc[feature] =
-        'Сумма операции указывается в тысячах тенге.'
+        'Сумма операции указывается в тысячах долларах.'
     } else {
       const index = Number(feature.replace('V', '')) - 1
       acc[feature] = `${PCA_DESCRIPTIONS[index]} Значение рассчитывается автоматически аналитическим пайплайном; вручную его обычно не изменяют.`
@@ -85,6 +89,19 @@ export function SinglePredictionPanel() {
   const [result, setResult] = useState<PredictResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [lastTransaction, setLastTransaction] = useState<TransactionFeatures | null>(null)
+  const [explanation, setExplanation] = useState<string | null>(null)
+  const [explanationError, setExplanationError] = useState<string | null>(null)
+  const [explanationLoading, setExplanationLoading] = useState(false)
+  const [llmEnabled, setLlmEnabled] = useState<boolean | null>(null)
+
+  const formattedExplanation = useMemo(() => {
+    if (!explanation) return null
+    return explanation
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/^\s*\*\s+/gm, '• ')
+      .replace(/^\s*-\s+/gm, '• ')
+  }, [explanation])
 
   const handleInputChange = (feature: FeatureName, value: string) => {
     setFormState((prev) => ({ ...prev, [feature]: value }))
@@ -94,6 +111,10 @@ export function SinglePredictionPanel() {
     setFormState(toStringState(DEFAULT_TRANSACTION))
     setResult(null)
     setError(null)
+    setExplanation(null)
+    setExplanationError(null)
+    setLlmEnabled(null)
+    setLastTransaction(null)
   }
 
   const handleFillSample = async () => {
@@ -103,6 +124,10 @@ export function SinglePredictionPanel() {
       const sample: SampleTransactionResponse = await apiClient.getSampleTransaction()
       setFormState(toStringState(sample.sample_transaction))
       setResult(null)
+      setExplanation(null)
+      setExplanationError(null)
+      setLlmEnabled(null)
+      setLastTransaction(null)
     } catch (err) {
       setError(
         err && typeof err === 'object' && 'message' in err
@@ -121,7 +146,7 @@ export function SinglePredictionPanel() {
     setResult(null)
 
     try {
-      const transaction = FEATURE_NAMES.reduce<Record<FeatureName, number>>((acc, feature) => {
+      const transaction = FEATURE_NAMES.reduce<TransactionFeatures>((acc, feature) => {
         const value = formState[feature]
         if (value === undefined || value === null || value === '') {
           throw new Error(
@@ -136,7 +161,7 @@ export function SinglePredictionPanel() {
         }
         acc[feature] = parsed
         return acc
-      }, {} as Record<FeatureName, number>)
+      }, {} as TransactionFeatures)
 
       const response = await apiClient.predict({
         ...transaction,
@@ -148,10 +173,35 @@ export function SinglePredictionPanel() {
       }
 
       setResult(response)
+      setLastTransaction(transaction)
+      setExplanation(null)
+      setExplanationError(null)
+      setLlmEnabled(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось выполнить предсказание')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleExplain = async () => {
+    if (!result || !lastTransaction) {
+      setExplanationError('Сначала выполните предсказание для транзакции.')
+      return
+    }
+    setExplanationLoading(true)
+    setExplanationError(null)
+    try {
+      const response = await apiClient.explain(lastTransaction, result.threshold ?? threshold)
+      if (response.error) {
+        throw new Error(response.error)
+      }
+      setExplanation(response.explanation)
+      setLlmEnabled(response.llm_enabled)
+    } catch (err) {
+      setExplanationError(err instanceof Error ? err.message : 'Не удалось получить объяснение')
+    } finally {
+      setExplanationLoading(false)
     }
   }
 
@@ -341,6 +391,58 @@ export function SinglePredictionPanel() {
                 </p>
               )}
             </div>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-slate-950/60 p-5 shadow-inner shadow-emerald-900/30">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h4 className="text-base font-semibold text-emerald-100">
+                  Объяснение решения
+                </h4>
+                <p className="text-xs text-slate-400">
+                  AI-аналитик объяснит, почему модель выставила такой риск и какие шаги рекомендованы.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleExplain}
+                disabled={explanationLoading}
+                className="inline-flex items-center rounded-lg border border-emerald-400/50 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-100 transition hover:border-emerald-300 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {explanationLoading
+                  ? 'Генерация объяснения…'
+                  : explanation
+                    ? 'Обновить объяснение'
+                    : 'Получить объяснение'}
+              </button>
+            </div>
+
+            {explanationError ? (
+              <div className="mt-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                {explanationError}
+              </div>
+            ) : null}
+
+            {llmEnabled === false ? (
+              <p className="mt-4 text-sm text-amber-200">
+                Gemini недоступен: проверьте переменную окружения `GEMINI_API_KEY` и перезапустите
+                сервер.
+              </p>
+            ) : null}
+
+            {formattedExplanation ? (
+              <div className="mt-4 whitespace-pre-wrap rounded-xl border border-emerald-400/20 bg-emerald-500/5 px-4 py-4 text-sm text-emerald-50 shadow-inner shadow-emerald-900/20">
+                {formattedExplanation}
+              </div>
+            ) : (
+              !explanationLoading && (
+                <p className="mt-4 text-sm text-slate-400">
+                  Нажмите «Получить объяснение», чтобы AI детально описал, почему операция признана
+                  {' '}
+                  {result.is_fraud ? 'подозрительной.' : 'безопасной.'}
+                </p>
+              )
+            )}
           </div>
         </div>
       ) : null}

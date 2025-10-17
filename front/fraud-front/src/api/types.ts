@@ -57,6 +57,19 @@ export interface SampleTransactionResponse {
   error?: string
 }
 
+export interface ExplainResponse {
+  explanation: string
+  fraud_score: number | null
+  is_fraud: boolean | null
+  confidence: number | null
+  risk_level?: string
+  threshold: number
+  model_info?: Record<string, unknown>
+  llm_enabled: boolean
+  timestamp: string
+  error?: string
+}
+
 export interface ApiError {
   message: string
   status?: number
