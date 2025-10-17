@@ -13,6 +13,7 @@ import os
 import logging
 from datetime import datetime
 import traceback
+from app.llm import explain_transaction, llm_available
 
 try:
     from app.inference import get_model, validate_and_predict
@@ -317,6 +318,63 @@ def get_sample_transaction():
         return jsonify({
             "error": str(e)
         }), 500
+
+@app.route('/explain', methods=['POST'])
+def explain_fraud():
+    """
+    Объяснение предсказания мошенничества с помощью Gemini.
+
+    Expected JSON:
+    {
+      "transaction": { V1..V28, Amount, (optional) Time },
+      "threshold": float (optional, default 0.5)
+    }
+    """
+    try:
+        if fraud_model is None:
+            return jsonify({"error": "Модель не загружена"}), 503
+
+        if not request.is_json:
+            return jsonify({"error": "Ожидается JSON в теле запроса"}), 400
+
+        payload = request.get_json() or {}
+        # Поддерживаем два формата: либо транзакция на верхнем уровне, либо в поле transaction
+        transaction = payload.get("transaction") if isinstance(payload, dict) else None
+        if transaction is None:
+            transaction = payload
+
+        threshold = payload.get("threshold", 0.5)
+        try:
+            threshold = float(threshold)
+            if not 0 <= threshold <= 1:
+                return jsonify({"error": "Порог должен быть между 0 и 1"}), 400
+        except (ValueError, TypeError):
+            return jsonify({"error": "Порог должен быть числом"}), 400
+
+        # Получаем детальный результат предсказания
+        result = fraud_model.predict_with_details(transaction, threshold)
+        if result.get("error"):
+            return jsonify({"error": result["error"]}), 400
+
+        # Генерируем объяснение через LLM
+        explanation = explain_transaction(transaction, result)
+        response = {
+            "explanation": explanation,
+            "fraud_score": result.get("fraud_score"),
+            "is_fraud": result.get("is_fraud"),
+            "confidence": result.get("confidence"),
+            "risk_level": result.get("risk_level"),
+            "threshold": result.get("threshold", threshold),
+            "model_info": result.get("model_info", {}),
+            "llm_enabled": llm_available(),
+            "timestamp": datetime.now().isoformat(),
+        }
+        return jsonify(response), 200
+
+    except Exception as e:
+        logger.error(f"Ошибка в explain: {e}")
+        logger.error(traceback.format_exc())
+        return jsonify({"error": f"Внутренняя ошибка сервера: {str(e)}"}), 500
 
 @app.errorhandler(404)
 def not_found(error):

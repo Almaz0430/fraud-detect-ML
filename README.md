@@ -101,12 +101,39 @@ jupyter nbconvert --to notebook --execute notebooks/train_model.ipynb
 ### 4. Запуск API
 
 ```bash
-# Запустите Flask API
-python app/api.py
+# Запускайте API как модуль пакета
+python -m app.api
 
 # API будет доступен по адресу: http://localhost:5000
 ```
 
+### 5. Gemini (LLM) объяснения
+
+Добавлена поддержка объяснений предсказаний через Google Gemini.
+
+- Установите SDK:
+  ```bash
+  pip install google-generativeai
+  ```
+- Задайте ключ в переменной окружения `GEMINI_API_KEY`:
+  ```powershell
+  # PowerShell (Windows)
+  $env:GEMINI_API_KEY="ВАШ_КЛЮЧ"
+  
+  # bash (Linux/macOS)
+  export GEMINI_API_KEY="ВАШ_КЛЮЧ"
+  ```
+- Эндпоинт `POST /explain` принимает ту же транзакцию, что и `/predict`.
+
+Пример запроса:
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d @sample.json \
+  http://localhost:5000/explain
+```
+
+Где `sample.json` — JSON с полями `V1..V28` и `Amount`. В ответе будет текстовое поле `explanation`. Если ключ не задан, сервис вернёт информативное сообщение и `llm_enabled=false`.
 ## 🔧 API Документация
 
 ### Эндпоинты

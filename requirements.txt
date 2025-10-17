@@ -12,3 +12,4 @@ jupyter>=1.0.0
 notebook>=7.0.0
 requests>=2.31.0
 kagglehub>=0.2.0
+google-generativeai
