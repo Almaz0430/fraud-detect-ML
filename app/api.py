@@ -399,13 +399,15 @@ def internal_error(error):
         "timestamp": datetime.now().isoformat()
     }), 500
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve(path):
-    if path != "" and os.path.exists(app.static_folder + '/' + path):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, 'index.html')
+@app.route("/")
+def index():
+    return send_from_directory(app.static_folder, "index.html")
+
+
+# Раздача остальных статических файлов
+@app.route("/<path:path>")
+def static_files(path):
+    return send_from_directory(app.static_folder, path)
 
 if __name__ == '__main__':
     # Инициализация модели при запуске
