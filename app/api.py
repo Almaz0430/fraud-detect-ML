@@ -38,6 +38,13 @@ CORS(
     resources={r"/*": {"origins": os.environ.get("ALLOWED_ORIGINS", "*")}},
 )
 
+# Инициализация модели при запуске
+logger.info("Инициализация модели...")
+model_initialized = initialize_model()
+if not model_initialized:
+    logger.warning("Модель не инициализирована. API будет работать в ограниченном режиме.")
+    logger.warning("Убедитесь, что модель обучена и сохранена в папке model/")
+
 # Глобальная переменная для модели
 fraud_model = None
 
@@ -410,14 +417,6 @@ def internal_error(error):
 
 
 if __name__ == '__main__':
-    # Инициализация модели при запуске
-    logger.info("Запуск API сервера...")
-    
-    model_initialized = initialize_model()
-    if not model_initialized:
-        logger.warning("Модель не инициализирована. API будет работать в ограниченном режиме.")
-        logger.warning("Убедитесь, что модель обучена и сохранена в папке model/")
-    
     # Запуск сервера
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('DEBUG', 'False').lower() == 'true'
