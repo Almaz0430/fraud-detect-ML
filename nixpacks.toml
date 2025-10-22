@@ -1,5 +1,5 @@
 [phases.build]
-cmds = ["npm --prefix front/fraud-front install", "npm --prefix front/fraud-front run build && mv front/fraud-front/dist app/dist"]
+cmds = ["npm --prefix front/fraud-front install", "npm --prefix front/fraud-front run build"]
 
 [start]
 cmd = "gunicorn app.api:app --bind 0.0.0.0:8080"
