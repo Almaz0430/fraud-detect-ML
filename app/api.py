@@ -379,9 +379,23 @@ def explain_fraud():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+    abs_static_folder = os.path.abspath(app.static_folder)
+    logger.info(f"Static folder absolute path: {abs_static_folder}")
+    logger.info(f"Serving path: '{path}'")
+
+    file_path_to_check = os.path.join(app.static_folder, path) if path else app.static_folder
+    logger.info(f"Checking for file at: {file_path_to_check}")
+
+    if path and os.path.exists(file_path_to_check):
+        logger.info(f"File found. Serving: {path}")
         return send_from_directory(app.static_folder, path)
     else:
+        logger.info("Path not found or empty. Serving index.html.")
+        index_path = os.path.join(app.static_folder, 'index.html')
+        logger.info(f"Checking for index.html at: {index_path}")
+        if not os.path.exists(index_path):
+            logger.error(f"index.html NOT FOUND in static folder: {abs_static_folder}")
+            return jsonify({"error": "Application not built correctly: index.html is missing."}), 404
         return send_from_directory(app.static_folder, 'index.html')
 
 @app.errorhandler(500)
