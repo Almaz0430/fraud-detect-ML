@@ -1,5 +1,5 @@
 import type { HealthResponse, ModelInfoResponse } from '../api/types'
-import { formatTimestamp, getStatusTone } from '../lib/utils'
+import { formatNumber, formatTimestamp, getStatusTone } from '../lib/utils'
 
 const FRIENDLY_MODEL_KEYS = new Map<string, string>([
   ['model_name', 'Название модели'],
@@ -67,7 +67,7 @@ export function StatusOverview({
             </div>
             <span
               className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${getStatusTone(
-                health?.status === 'ok',
+                health?.status,
               )}`}
             >
               {health?.status === 'ok' ? 'Работает' : 'Недоступно'}
@@ -104,9 +104,7 @@ export function StatusOverview({
                     </dt>
                     <dd className="mt-1 text-sm text-slate-200">
                       {typeof value === 'number'
-                        ? value.toLocaleString('ru-RU', {
-                            maximumFractionDigits: 4,
-                          })
+                        ? formatNumber(value, { fractionDigits: 4 })
                         : String(value)}
                     </dd>
                   </div>

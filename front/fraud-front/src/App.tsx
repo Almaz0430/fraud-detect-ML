@@ -66,7 +66,7 @@ function App() {
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-emerald-300/80">
-                Fraud Insight
+                Fraud Detect AI
               </p>
               <h1 className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">
                 Детекция мошенничества

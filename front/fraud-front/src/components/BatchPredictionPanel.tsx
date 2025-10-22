@@ -319,7 +319,8 @@ export function BatchPredictionPanel() {
               <h3 className="text-lg font-semibold text-slate-100">Сводка результатов</h3>
               <p className="text-xs text-slate-500">
                 Обработано записей: {result.total_transactions}. Порог —{' '}
-                {formatNumber(result.threshold, 2)}. Отчёт от {formatTimestamp(result.timestamp)}.
+                {formatNumber(result.threshold, { fractionDigits: 2 })}. Отчёт от{' '}
+                {formatTimestamp(result.timestamp)}.
               </p>
             </div>
           </div>
@@ -342,14 +343,16 @@ export function BatchPredictionPanel() {
                       {item.transaction_id + 1}
                     </td>
                     <td className="px-4 py-3 font-mono text-sm">
-                      {formatNumber(item.fraud_score, 4)}
+                      {formatNumber(item.fraud_score, { fractionDigits: 4 })}
                     </td>
                     <td className="px-4 py-3">
                       <span className="rounded-full bg-slate-800/80 px-2.5 py-1 text-xs">
                         {item.risk_level ?? '—'}
                       </span>
                     </td>
-                    <td className="px-4 py-3">{formatNumber(item.confidence, 2)}</td>
+                    <td className="px-4 py-3">
+                      {formatNumber(item.confidence, { fractionDigits: 2 })}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getRiskTone(item.fraud_score)}`}

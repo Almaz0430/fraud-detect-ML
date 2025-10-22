@@ -355,15 +355,17 @@ export function SinglePredictionPanel() {
                 Вероятность мошенничества
               </p>
               <p className="mt-3 text-4xl font-semibold text-white">
-                {formatNumber(result.fraud_score, 4)}
+                {formatNumber(result.fraud_score, { fractionDigits: 4 })}
               </p>
               <span
-                className={`mt-4 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getRiskTone(result.fraud_score)}`}
+                className={`mt-4 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getRiskTone(
+                  result.fraud_score,
+                )}`}
               >
                 {result.is_fraud ? 'Проверьте транзакцию' : 'Риск низкий'}
               </span>
               <p className="mt-4 text-xs text-slate-500">
-                Уверенность модели: {formatNumber(result.confidence, 2)}. Если показатель выше 0.7 —
+                Уверенность модели: {formatNumber(result.confidence, { fractionDigits: 2 })}. Если показатель выше 0.7 —
                 инициируйте дополнительную проверку клиента.
               </p>
             </div>
@@ -374,7 +376,7 @@ export function SinglePredictionPanel() {
               </div>
               <div className="flex justify-between gap-3">
                 <span className="text-slate-400">Порог</span>
-                <span className="font-medium">{formatNumber(result.threshold, 2)}</span>
+                <span className="font-medium">{formatNumber(result.threshold, { fractionDigits: 2 })}</span>
               </div>
               {result.model_info ? (
                 Object.entries(result.model_info).map(([key, value]) => (
