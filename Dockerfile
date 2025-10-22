@@ -7,9 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./app /app
 COPY ./model /model
-COPY entrypoint.sh /entrypoint.sh
-
-RUN chmod +x /entrypoint.sh
+COPY start.py /start.py
 
 EXPOSE 8080
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["python", "/start.py"]
