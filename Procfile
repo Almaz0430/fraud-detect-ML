@@ -1,1 +1,1 @@
-web: gunicorn app.api:app --host=0.0.0.0 --port=${PORT:-8080}
+web: gunicorn --bind 0.0.0.0:${PORT:-8080} app.api:app
