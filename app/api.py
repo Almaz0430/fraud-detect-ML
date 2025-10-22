@@ -31,7 +31,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Создание Flask приложения
-app = Flask(__name__, static_folder='dist', static_url_path='/')
+basedir = os.path.abspath(os.path.dirname(__file__))
+static_folder_path = os.path.join(basedir, 'dist')
+app = Flask(__name__, static_folder=static_folder_path)
 CORS(
     app,
     resources={r"/*": {"origins": os.environ.get("ALLOWED_ORIGINS", "*")}},
