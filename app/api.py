@@ -7,7 +7,7 @@ Flask API для системы детекции мошенничества.
 - Получения информации о модели (/model-info)
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 import logging
