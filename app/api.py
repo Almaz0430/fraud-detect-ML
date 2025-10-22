@@ -31,7 +31,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Создание Flask приложения
-app = Flask(__name__, static_folder='../front/fraud-front/dist', static_url_path='/')
+app = Flask(__name__, static_folder='dist', static_url_path='/')
 CORS(
     app,
     resources={r"/*": {"origins": os.environ.get("ALLOWED_ORIGINS", "*")}},
