@@ -1,4 +1,4 @@
 # nixpacks.toml
 
 [start]
-cmd = "gunicorn app.api:app --bind 0.0.0.0:$PORT"
+cmd = "gunicorn app.api:app --bind 0.0.0.0:8080"
