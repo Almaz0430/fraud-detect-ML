@@ -38,13 +38,6 @@ CORS(
     resources={r"/*": {"origins": os.environ.get("ALLOWED_ORIGINS", "*")}},
 )
 
-# Инициализация модели при запуске
-logger.info("Инициализация модели...")
-model_initialized = initialize_model()
-if not model_initialized:
-    logger.warning("Модель не инициализирована. API будет работать в ограниченном режиме.")
-    logger.warning("Убедитесь, что модель обучена и сохранена в папке model/")
-
 # Глобальная переменная для модели
 fraud_model = None
 
@@ -59,6 +52,13 @@ def initialize_model():
     except Exception as e:
         logger.error(f"Ошибка инициализации модели: {e}")
         return False
+
+# Инициализация модели при запуске
+logger.info("Инициализация модели...")
+model_initialized = initialize_model()
+if not model_initialized:
+    logger.warning("Модель не инициализирована. API будет работать в ограниченном режиме.")
+    logger.warning("Убедитесь, что модель обучена и сохранена в папке model/")
 
 @app.route('/health', methods=['GET'])
 def health_check():
