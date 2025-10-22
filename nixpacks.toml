@@ -1,4 +1,5 @@
-# nixpacks.toml
+[phases.build]
+cmds = ["npm --prefix front/fraud-front install", "npm --prefix front/fraud-front run build"]
 
 [start]
 cmd = "gunicorn app.api:app --bind 0.0.0.0:8080"

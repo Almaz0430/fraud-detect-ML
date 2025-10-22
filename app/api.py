@@ -31,7 +31,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Создание Flask приложения
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../front/fraud-front/dist', static_url_path='/')
 CORS(
     app,
     resources={r"/*": {"origins": os.environ.get("ALLOWED_ORIGINS", "*")}},
@@ -398,6 +398,14 @@ def internal_error(error):
         "error": "Внутренняя ошибка сервера",
         "timestamp": datetime.now().isoformat()
     }), 500
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
     # Инициализация модели при запуске
