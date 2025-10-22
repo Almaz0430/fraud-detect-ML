@@ -376,19 +376,13 @@ def explain_fraud():
         logger.error(traceback.format_exc())
         return jsonify({"error": f"Внутренняя ошибка сервера: {str(e)}"}), 500
 
-@app.errorhandler(404)
-def not_found(error):
-    """Обработчик 404 ошибки."""
-    return jsonify({
-        "error": "Эндпоинт не найден",
-        "available_endpoints": [
-            "GET /health - проверка состояния",
-            "POST /predict - предсказание мошенничества",
-            "GET /model-info - информация о модели",
-            "POST /predict/batch - пакетное предсказание",
-            "GET /sample-transaction - пример транзакции"
-        ]
-    }), 404
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 @app.errorhandler(500)
 def internal_error(error):
@@ -399,15 +393,7 @@ def internal_error(error):
         "timestamp": datetime.now().isoformat()
     }), 500
 
-@app.route("/")
-def index():
-    return send_from_directory(app.static_folder, "index.html")
 
-
-# Раздача остальных статических файлов
-@app.route("/<path:path>")
-def static_files(path):
-    return send_from_directory(app.static_folder, path)
 
 if __name__ == '__main__':
     # Инициализация модели при запуске
