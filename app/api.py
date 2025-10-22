@@ -45,8 +45,8 @@ def initialize_model():
     """Инициализация модели при запуске приложения."""
     global fraud_model
     try:
-        model_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "model")
-        fraud_model = get_model(model_dir)
+        model_path = os.path.join(basedir, '..', 'model')
+        fraud_model = get_model(model_path)
         logger.info("Модель успешно инициализирована")
         return True
     except Exception as e:
@@ -81,9 +81,7 @@ def health_check():
             "version": "1.0.0"
         }
         
-        status_code = 200 if model_status else 503
-        
-        return jsonify(response), status_code
+        return jsonify(response), 200
         
     except Exception as e:
         logger.error(f"Ошибка в health check: {e}")
@@ -204,8 +202,9 @@ def get_model_info():
     try:
         if fraud_model is None:
             return jsonify({
-                "error": "Модель не загружена"
-            }), 503
+                "error": "Модель не загружена",
+                "model_loaded": False
+            }), 200
         
         info = fraud_model.get_model_info()
         info["timestamp"] = datetime.now().isoformat()

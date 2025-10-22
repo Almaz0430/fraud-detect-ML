@@ -21,14 +21,20 @@ logger = logging.getLogger(__name__)
 class FraudDetectionModel:
     """Класс для загрузки модели и выполнения предсказаний."""
     
-    def __init__(self, model_dir: str = "../model"):
+    def __init__(self, model_dir: str = None):
         """
         Инициализация модели.
         
         Args:
             model_dir: Путь к директории с моделью
         """
-        self.model_dir = model_dir
+        if model_dir is None:
+            # Путь по умолчанию относительно текущего файла
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            self.model_dir = os.path.join(base_dir, '..', '..', 'model')
+        else:
+            self.model_dir = model_dir
+        
         self.model = None
         self.scaler = None
         self.metrics = None
