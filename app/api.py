@@ -364,8 +364,7 @@ def explain_fraud():
             return jsonify({"error": result["error"]}), 400
 
         # Генерируем объяснение через LLM
-        # explanation = explain_transaction(transaction, result)
-        explanation = "LLM explanation is temporarily disabled."
+        explanation = explain_transaction(transaction, result)
         response = {
             "explanation": explanation,
             "fraud_score": result.get("fraud_score"),
