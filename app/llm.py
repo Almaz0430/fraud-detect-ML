@@ -4,17 +4,7 @@ import logging
 from typing import Dict, Any
 from pathlib import Path
 
-# Загружаем переменные из .env файла
-try:
-    from dotenv import load_dotenv
-    # Ищем .env файл в корне проекта
-    env_path = Path(__file__).parent.parent / '.env'
-    load_dotenv(dotenv_path=env_path)
-    logger = logging.getLogger(__name__)
-    logger.info(f"Загружены переменные из {env_path}")
-except ImportError:
-    logger = logging.getLogger(__name__)
-    logger.warning("python-dotenv не установлен, используем только системные переменные окружения")
+logger = logging.getLogger(__name__)
 
 try:
     import google.generativeai as genai
