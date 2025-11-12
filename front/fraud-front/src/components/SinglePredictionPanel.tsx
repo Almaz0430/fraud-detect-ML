@@ -70,7 +70,7 @@ const FEATURE_DESCRIPTIONS: Record<FeatureName, string> = FEATURE_NAMES.reduce(
   {} as Record<FeatureName, string>,
 )
 
-function toStringState(transaction: Record<FeatureName, number>): TransactionFormState {
+function toStringState(transaction: TransactionFeatures): TransactionFormState {
   return FEATURE_NAMES.reduce<TransactionFormState>(
     (acc, feature) => {
       acc[feature] = transaction[feature]?.toString() ?? ''
