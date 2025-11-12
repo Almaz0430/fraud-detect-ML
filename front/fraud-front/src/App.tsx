@@ -4,9 +4,12 @@ import type { HealthResponse, ModelInfoResponse } from './api/types'
 import { StatusOverview } from './components/StatusOverview'
 import { SinglePredictionPanel } from './components/SinglePredictionPanel'
 import { BatchPredictionPanel } from './components/BatchPredictionPanel'
+import { EnhancedAnalysisPanel } from './components/EnhancedAnalysisPanel'
+import { ChatbotPanel } from './components/ChatbotPanel'
+import { FeedbackPanel } from './components/FeedbackPanel'
 import { CyberBackground } from './components/CyberBackground'
 
-type TabId = 'status' | 'single' | 'batch'
+type TabId = 'status' | 'single' | 'batch' | 'enhanced' | 'chatbot' | 'feedback'
 
 const tabs: Array<{ id: TabId; label: string; description: string }> = [
   {
@@ -23,6 +26,21 @@ const tabs: Array<{ id: TabId; label: string; description: string }> = [
     id: 'batch',
     label: 'Пакетный анализ',
     description: 'Анализ массива транзакций',
+  },
+  {
+    id: 'enhanced',
+    label: 'AI-анализ',
+    description: 'Расширенный анализ с ИИ',
+  },
+  {
+    id: 'chatbot',
+    label: 'Чат-бот',
+    description: 'AI-консультант',
+  },
+  {
+    id: 'feedback',
+    label: 'Обратная связь',
+    description: 'Оценка предсказаний',
   },
 ]
 
@@ -112,6 +130,12 @@ function App() {
           {activeTab === 'single' ? <SinglePredictionPanel /> : null}
 
           {activeTab === 'batch' ? <BatchPredictionPanel /> : null}
+
+          {activeTab === 'enhanced' ? <EnhancedAnalysisPanel /> : null}
+
+          {activeTab === 'chatbot' ? <ChatbotPanel /> : null}
+
+          {activeTab === 'feedback' ? <FeedbackPanel /> : null}
         </main>
 
         <footer className="border-t border-slate-800/60 py-6 text-sm text-slate-500">

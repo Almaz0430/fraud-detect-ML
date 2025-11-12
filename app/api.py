@@ -14,6 +14,12 @@ import logging
 from datetime import datetime
 import traceback
 from app.llm import explain_transaction, llm_available
+from app.enhanced_llm import (
+    get_enhanced_explanation, find_similar_transactions, 
+    analyze_transaction_anomalies, get_risk_recommendations,
+    save_transaction_feedback
+)
+from app.chatbot import chat_with_bot, get_chatbot_stats, clear_chatbot_session
 
 try:
     from app.inference import get_model, validate_and_predict
@@ -383,6 +389,291 @@ def explain_fraud():
         logger.error(traceback.format_exc())
         return jsonify({"error": f"Внутренняя ошибка сервера: {str(e)}"}), 500
 
+@app.route('/explain/enhanced', methods=['POST'])
+def enhanced_explain():
+    """
+    Расширенное объяснение с похожими случаями и рекомендациями.
+    
+    Expected JSON:
+    {
+        "transaction": { V1..V28, Amount },
+        "threshold": float (optional, default 0.5),
+        "language": str (optional, default 'ru')
+    }
+    """
+    try:
+        if fraud_model is None:
+            return jsonify({"error": "Модель не загружена"}), 503
+
+        if not request.is_json:
+            return jsonify({"error": "Ожидается JSON в теле запроса"}), 400
+
+        payload = request.get_json() or {}
+        transaction = payload.get("transaction", payload)
+        threshold = float(payload.get("threshold", 0.5))
+        language = payload.get("language", "ru")
+        
+        if language not in ['ru', 'en', 'kk']:
+            return jsonify({"error": "Поддерживаемые языки: ru, en, kk"}), 400
+
+        # Получаем детальный результат предсказания
+        result = fraud_model.predict_with_details(transaction, threshold)
+        if result.get("error"):
+            return jsonify({"error": result["error"]}), 400
+
+        # Генерируем расширенное объяснение
+        explanation = get_enhanced_explanation(transaction, result, language)
+        
+        # Находим похожие случаи
+        similar_cases = find_similar_transactions(transaction, top_k=3)
+        
+        # Анализируем аномалии
+        anomalies = analyze_transaction_anomalies(transaction, result)
+        
+        # Получаем рекомендации
+        recommendations = get_risk_recommendations(transaction, result, language)
+
+        response = {
+            "explanation": explanation,
+            "similar_cases": similar_cases,
+            "anomalies": anomalies,
+            "recommendations": recommendations,
+            "fraud_score": result.get("fraud_score"),
+            "is_fraud": result.get("is_fraud"),
+            "confidence": result.get("confidence"),
+            "risk_level": result.get("risk_level"),
+            "threshold": threshold,
+            "language": language,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        return jsonify(response), 200
+
+    except Exception as e:
+        logger.error(f"Ошибка в enhanced_explain: {e}")
+        return jsonify({"error": f"Внутренняя ошибка сервера: {str(e)}"}), 500
+
+@app.route('/similar-cases', methods=['POST'])
+def get_similar_cases():
+    """
+    Поиск похожих исторических случаев.
+    
+    Expected JSON:
+    {
+        "transaction": { V1..V28, Amount },
+        "top_k": int (optional, default 5)
+    }
+    """
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Ожидается JSON в теле запроса"}), 400
+
+        payload = request.get_json()
+        transaction = payload.get("transaction", {})
+        top_k = int(payload.get("top_k", 5))
+        
+        if not transaction:
+            return jsonify({"error": "Поле 'transaction' обязательно"}), 400
+
+        similar_cases = find_similar_transactions(transaction, top_k)
+        
+        return jsonify({
+            "similar_cases": similar_cases,
+            "total_found": len(similar_cases),
+            "timestamp": datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Ошибка в get_similar_cases: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/analyze-anomalies', methods=['POST'])
+def analyze_anomalies():
+    """
+    Детальный анализ аномалий в транзакции.
+    
+    Expected JSON:
+    {
+        "transaction": { V1..V28, Amount },
+        "threshold": float (optional, default 0.5)
+    }
+    """
+    try:
+        if fraud_model is None:
+            return jsonify({"error": "Модель не загружена"}), 503
+
+        if not request.is_json:
+            return jsonify({"error": "Ожидается JSON в теле запроса"}), 400
+
+        payload = request.get_json()
+        transaction = payload.get("transaction", {})
+        threshold = float(payload.get("threshold", 0.5))
+        
+        if not transaction:
+            return jsonify({"error": "Поле 'transaction' обязательно"}), 400
+
+        # Получаем результат предсказания
+        result = fraud_model.predict_with_details(transaction, threshold)
+        if result.get("error"):
+            return jsonify({"error": result["error"]}), 400
+
+        # Анализируем аномалии
+        anomalies = analyze_transaction_anomalies(transaction, result)
+        
+        return jsonify({
+            "anomalies": anomalies,
+            "fraud_score": result.get("fraud_score"),
+            "is_fraud": result.get("is_fraud"),
+            "timestamp": datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Ошибка в analyze_anomalies: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/recommendations', methods=['POST'])
+def get_recommendations():
+    """
+    Получение рекомендаций по снижению рисков.
+    
+    Expected JSON:
+    {
+        "transaction": { V1..V28, Amount },
+        "threshold": float (optional, default 0.5),
+        "language": str (optional, default 'ru')
+    }
+    """
+    try:
+        if fraud_model is None:
+            return jsonify({"error": "Модель не загружена"}), 503
+
+        if not request.is_json:
+            return jsonify({"error": "Ожидается JSON в теле запроса"}), 400
+
+        payload = request.get_json()
+        transaction = payload.get("transaction", {})
+        threshold = float(payload.get("threshold", 0.5))
+        language = payload.get("language", "ru")
+        
+        if not transaction:
+            return jsonify({"error": "Поле 'transaction' обязательно"}), 400
+
+        # Получаем результат предсказания
+        result = fraud_model.predict_with_details(transaction, threshold)
+        if result.get("error"):
+            return jsonify({"error": result["error"]}), 400
+
+        # Получаем рекомендации
+        recommendations = get_risk_recommendations(transaction, result, language)
+        
+        return jsonify({
+            "recommendations": recommendations,
+            "fraud_score": result.get("fraud_score"),
+            "is_fraud": result.get("is_fraud"),
+            "risk_level": result.get("risk_level"),
+            "language": language,
+            "timestamp": datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Ошибка в get_recommendations: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/feedback', methods=['POST'])
+def submit_feedback():
+    """
+    Отправка обратной связи по предсказанию.
+    
+    Expected JSON:
+    {
+        "transaction": { V1..V28, Amount },
+        "prediction_result": { fraud_score, is_fraud, ... },
+        "feedback": bool (true - правильно, false - неправильно)
+    }
+    """
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Ожидается JSON в теле запроса"}), 400
+
+        payload = request.get_json()
+        transaction = payload.get("transaction", {})
+        prediction_result = payload.get("prediction_result", {})
+        feedback = payload.get("feedback")
+        
+        if not transaction or not prediction_result or feedback is None:
+            return jsonify({"error": "Все поля обязательны: transaction, prediction_result, feedback"}), 400
+
+        # Сохраняем обратную связь
+        save_transaction_feedback(transaction, prediction_result, bool(feedback))
+        
+        return jsonify({
+            "message": "Обратная связь сохранена",
+            "feedback": feedback,
+            "timestamp": datetime.now().isoformat()
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Ошибка в submit_feedback: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/chat', methods=['POST'])
+def chat_endpoint():
+    """
+    Чат-бот для вопросов о транзакциях.
+    
+    Expected JSON:
+    {
+        "message": str,
+        "session_id": str,
+        "language": str (optional, default 'ru'),
+        "transaction_context": dict (optional)
+    }
+    """
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Ожидается JSON в теле запроса"}), 400
+
+        payload = request.get_json()
+        message = payload.get("message", "")
+        session_id = payload.get("session_id", "")
+        language = payload.get("language", "ru")
+        transaction_context = payload.get("transaction_context")
+        
+        if not message or not session_id:
+            return jsonify({"error": "Поля 'message' и 'session_id' обязательны"}), 400
+
+        if language not in ['ru', 'en', 'kk']:
+            return jsonify({"error": "Поддерживаемые языки: ru, en, kk"}), 400
+
+        # Обрабатываем сообщение через чат-бот
+        response = chat_with_bot(session_id, message, language, transaction_context)
+        
+        return jsonify(response), 200
+
+    except Exception as e:
+        logger.error(f"Ошибка в chat_endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/chat/stats', methods=['GET'])
+def chat_stats():
+    """Статистика чат-бота."""
+    try:
+        stats = get_chatbot_stats()
+        return jsonify(stats), 200
+    except Exception as e:
+        logger.error(f"Ошибка в chat_stats: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/chat/clear/<session_id>', methods=['DELETE'])
+def clear_chat_session(session_id):
+    """Очистка сессии чат-бота."""
+    try:
+        clear_chatbot_session(session_id)
+        return jsonify({"message": f"Сессия {session_id} очищена"}), 200
+    except Exception as e:
+        logger.error(f"Ошибка в clear_chat_session: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
@@ -428,5 +719,14 @@ if __name__ == '__main__':
     logger.info("  GET  /model-info - информация о модели")
     logger.info("  POST /predict/batch - пакетное предсказание")
     logger.info("  GET  /sample-transaction - пример транзакции")
+    logger.info("  POST /explain - базовое объяснение")
+    logger.info("  POST /explain/enhanced - расширенное объяснение с многоязычностью")
+    logger.info("  POST /similar-cases - поиск похожих случаев")
+    logger.info("  POST /analyze-anomalies - анализ аномалий")
+    logger.info("  POST /recommendations - рекомендации по рискам")
+    logger.info("  POST /feedback - обратная связь")
+    logger.info("  POST /chat - чат-бот")
+    logger.info("  GET  /chat/stats - статистика чат-бота")
+    logger.info("  DELETE /chat/clear/<session_id> - очистка сессии")
     
     app.run(host='0.0.0.0', port=port, debug=debug)
