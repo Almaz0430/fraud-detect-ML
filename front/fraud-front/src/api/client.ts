@@ -18,8 +18,8 @@ import type {
   Language,
 } from './types'
 
-// const API_BASE_URL = ''.replace(/\/$/, '')
-const API_BASE_URL = 'http://127.0.0.1:5000'
+const API_BASE_URL = ''.replace(/\/$/, '')
+// const API_BASE_URL = 'http://127.0.0.1:5000'
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   try {
